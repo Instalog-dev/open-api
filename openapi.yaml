@@ -1,0 +1,331 @@
+openapi: 3.1.0
+info:
+  title: Instalog API
+  description: API for collecting logs, feedback, and crash reports from mobile applications
+  version: 1.0.0
+  
+servers:
+  - url: http://api.instalog.dev/api
+    description: Api server
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  
+  schemas:
+    DeviceInfo:
+      type: object
+      additionalProperties: true
+      description: A map of device information properties
+      example:
+        os: "android"
+        device_brand: "google"
+        device_model: "sdk_gphone64_arm64"
+        android_version: "15"
+        battery_level: 100.0
+        battery_state: "not_charging"
+        build_board: "goldfish_arm64"
+        build_bootloader: "unknown"
+        build_fingerprint: "google/sdk_gphone64_arm64/emu64a:15/AE3A.240806.005/12228598:user/release-keys"
+        build_hardware: "ranchu"
+        build_host: "r-d5a25cf08fde7218-2swr"
+        build_security_patch: "2024-09-05"
+        build_tags: "release-keys"
+        build_time: "2024-08-14T17:58:15.000Z"
+        build_type: "user"
+        build_user: "android-build"
+        build_version_codename: "REL"
+        build_version_incremental: "12228598"
+        bundle_name: "Instalog"
+        device: "emu64a"
+        first_install_time: "2025-02-12T15:29:16.947Z"
+        is_emulator: true
+        last_update_time: "2025-02-24T06:45:28.483Z"
+        manufacturer: "Google"
+        product: "sdk_gphone64_arm64"
+        sdk_version: 35
+        supported_abis: ["arm64-v8a"]
+        version_code: 1
+        version_name: "1.0"
+    
+    LogParams:
+      type: object
+      properties:
+        event:
+          type: string
+          description: Name of the log event
+          example: hello_world
+        params:
+          type: object
+          description: Additional parameters for the event
+          additionalProperties: true
+          example:
+            eventName: UserLogin
+            timestamp: "1740383980814"
+            userId: "98765"
+            source: web
+            location: New York, USA
+            device: Android Emulator
+    
+    FeedbackData:
+      type: object
+      properties:
+        attachments:
+          type: array
+          items:
+            type: string
+          description: Array of attachment IDs
+          example: []
+        email:
+          type: string
+          format: email
+          description: Email of the user providing feedback
+          example: chiziaruhoma@gmail.com
+        id:
+          type: string
+          format: uuid
+          description: Unique ID for the feedback
+          example: 84280d52-4b6c-4d86-ae89-82836be30cbb
+        text:
+          type: string
+          description: Feedback text content
+          example: I love your app
+    
+    StackTrace:
+      type: object
+      properties:
+        report:
+          type: string
+          description: The full crash report
+          example: "Incident Identifier: 3DBB52DA-B108-4821-BFB2-1A90FD6B7E0E\nHardware Model: ..."
+        name:
+          type: string
+          description: Name of the crash
+          example: First Crash
+    
+    LogRequest:
+      type: object
+      required:
+        - bundle_identifier
+        - device
+        - device_uuid
+        - log
+        - unique_user_id
+      properties:
+        bundle_identifier:
+          type: string
+          description: Bundle identifier of the application
+          example: com.example.instalog
+        device:
+          $ref: '#/components/schemas/DeviceInfo'
+        device_uuid:
+          type: string
+          format: uuid
+          description: Unique identifier for the device
+          example: feaba37e-3061-4ebe-b8ce-d26c55c500c7
+        log:
+          $ref: '#/components/schemas/LogParams'
+        unique_user_id:
+          type: string
+          description: Unique identifier for the user
+          example: chiziaruhoma@gmail.com
+    
+    FeedbackRequest:
+      type: object
+      required:
+        - bundle_identifier
+        - device
+        - device_uuid
+        - feedback
+        - unique_user_id
+      properties:
+        bundle_identifier:
+          type: string
+          description: Bundle identifier of the application
+          example: com.example.instalog
+        device:
+          $ref: '#/components/schemas/DeviceInfo'
+        device_uuid:
+          type: string
+          format: uuid
+          description: Unique identifier for the device
+          example: feaba37e-3061-4ebe-b8ce-d26c55c500c7
+        feedback:
+          $ref: '#/components/schemas/FeedbackData'
+        unique_user_id:
+          type: string
+          description: Unique identifier for the user
+          example: chiziaruhoma@gmail.com
+    
+    CrashRequest:
+      type: object
+      required:
+        - bundle_identifier
+        - device
+        - device_uuid
+        - stack_trace
+        - timestamp
+      properties:
+        bundle_identifier:
+          type: string
+          description: Bundle identifier of the application
+          example: com.example.instalog
+        device:
+          $ref: '#/components/schemas/DeviceInfo'
+        device_uuid:
+          type: string
+          format: uuid
+          description: Unique identifier for the device
+          example: ED6A6A76-2367-4F66-95A3-76C86FEF4FC8
+        stack_trace:
+          $ref: '#/components/schemas/StackTrace'
+        timestamp:
+          type: number
+          format: double
+          description: Timestamp when the crash occurred
+          example: 761359279.333025
+
+paths:
+  /log:
+    post:
+      summary: Submit an application log
+      description: Send a log event with relevant data from the application
+      operationId: createLog
+      tags:
+        - logs
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogRequest'
+      responses:
+        '201':
+          description: Log successfully created
+        '400':
+          description: Bad request - invalid input data
+        '401':
+          description: Unauthorized - invalid API key
+        '403':
+          description: Forbidden - API key doesn't have access to this project
+        '500':
+          description: Internal server error
+  
+  /feedback:
+    post:
+      summary: Submit user feedback
+      description: Send user feedback with optional image attachments
+      operationId: createFeedback
+      tags:
+        - feedback
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - payload
+              properties:
+                payload:
+                  type: string
+                  format: json
+                  description: JSON string containing feedback data
+                  example: |
+                    {
+                      "bundle_identifier": "com.example.instalog",
+                      "device": {
+                        "android_version": "15",
+                        "battery_level": 100.0,
+                        "battery_state": "not_charging",
+                        "build_board": "goldfish_arm64",
+                        "build_bootloader": "unknown",
+                        "build_fingerprint": "google/sdk_gphone64_arm64/emu64a:15/AE3A.240806.005/12228598:user/release-keys",
+                        "build_hardware": "ranchu",
+                        "build_host": "r-d5a25cf08fde7218-2swr",
+                        "build_security_patch": "2024-09-05",
+                        "build_tags": "release-keys",
+                        "build_time": "2024-08-14T17:58:15.000Z",
+                        "build_type": "user",
+                        "build_user": "android-build",
+                        "build_version_codename": "REL",
+                        "build_version_incremental": "12228598",
+                        "bundle_name": "Instalog",
+                        "device": "emu64a",
+                        "device_brand": "google",
+                        "device_model": "sdk_gphone64_arm64",
+                        "first_install_time": "2025-02-12T15:29:16.947Z",
+                        "is_emulator": true,
+                        "last_update_time": "2025-02-24T06:45:28.483Z",
+                        "manufacturer": "Google",
+                        "os": "android",
+                        "product": "sdk_gphone64_arm64",
+                        "sdk_version": 35,
+                        "supported_abis": [
+                          "arm64-v8a"
+                        ],
+                        "version_code": 1,
+                        "version_name": "1.0"
+                      },
+                      "device_uuid": "feaba37e-3061-4ebe-b8ce-d26c55c500c7",
+                      "feedback": {
+                        "attachments": [],
+                        "email": "chiziaruhoma@gmail.com",
+                        "id": "84280d52-4b6c-4d86-ae89-82836be30cbb",
+                        "text": "I love your app"
+                      },
+                      "unique_user_id": "chiziaruhoma@gmail.com"
+                    }
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Image attachments for the feedback (up to 4 allowed)
+      responses:
+        '201':
+          description: Feedback successfully created
+        '400':
+          description: Bad request - invalid input data
+        '401':
+          description: Unauthorized - invalid API key
+        '403':
+          description: Forbidden - API key doesn't have access to this project
+        '413':
+          description: Payload too large - image attachments exceed size limit
+        '500':
+          description: Internal server error
+  
+  /crash:
+    post:
+      summary: Submit a crash report
+      description: Send a crash report with stack trace from the application
+      operationId: createCrash
+      tags:
+        - crashes
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrashRequest'
+      responses:
+        '201':
+          description: Crash report successfully created
+        '400':
+          description: Bad request - invalid input data
+        '401':
+          description: Unauthorized - invalid API key
+        '403':
+          description: Forbidden - API key doesn't have access to this project
+        '500':
+          description: Internal server error 
