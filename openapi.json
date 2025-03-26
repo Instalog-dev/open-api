@@ -223,9 +223,6 @@
         "summary": "Submit an application log",
         "description": "Send a log event with relevant data from the application",
         "operationId": "createLog",
-        "tags": [
-          "logs"
-        ],
         "security": [
           {
             "ApiKeyAuth": []
@@ -265,9 +262,6 @@
         "summary": "Submit user feedback",
         "description": "Send user feedback with optional image attachments",
         "operationId": "createFeedback",
-        "tags": [
-          "feedback"
-        ],
         "security": [
           {
             "ApiKeyAuth": []
@@ -329,9 +323,6 @@
         "summary": "Submit a crash report",
         "description": "Send a crash report with stack trace from the application",
         "operationId": "createCrash",
-        "tags": [
-          "crashes"
-        ],
         "security": [
           {
             "ApiKeyAuth": []
